@@ -1,4 +1,4 @@
-# **bouncemod v1.0.0**
+# **bouncemod**
 
 Bouncemod is a tool for easily modifying any remote servers. You can either pass ssh credentials in as run arguments or have it search the current user's Map.conf file.
 
