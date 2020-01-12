@@ -255,7 +255,7 @@ buildActionList = function(categories)
 			action = getArraySelection(category.actions, "Choose an action to add", "Back")
 			if action.type == "DEFAULT" then break
 
-			print("<b>" + action.desc + "</b> action selected")
+			print("\n<b>" + action.desc + "</b> action selected")
 			actionCopy = { "type": action.type, "desc": action.desc }
 			actionCopy.func = @action.func // GH BUG: MUST BE DONE OUTSIDE OF VARIABLE DECLARATION
 
@@ -276,6 +276,9 @@ buildActionList = function(categories)
 end function
 
 doActions = function(machines, actions)
+	count = 0
+	startTime = time
+
 	for machine in machines
 		remote = getShell(machine.ip, machine.user, machine.pass)
 		if not remote then 
@@ -286,17 +289,20 @@ doActions = function(machines, actions)
 		machine.shell = remote
 
 		for action in actions
-			doAction(action, machine)
+			count = count + doAction(action, machine)
 		end for
 	end for
+
+	elapsedTime = round(time - startTime, 1)
+
+	print("\n" + color.apply(color.INFO, "Done, " + count + " actions completed in " + elapsedTime + " seconds"))
 end function
 
 doAction = function(action, machine)
-	type = action.type
 	_params = null
 	if action.hasIndex("params") then _params = action.params
 
-	action.func(machine, _params)
+	return action.func(machine, _params)
 end function
 
 uploadFile = function(machine, _params)
@@ -308,7 +314,7 @@ uploadFile = function(machine, _params)
 	if typeof(success) == "string" or success == 0 then
 		color.print(color.ERROR, "Error: " + success)
 	else
-		print("Added " + hostPath.split("/")[-1] + " to " + machine.ip)
+		print("Uploaded <b>" + hostPath + "</b>")
 		count = 1
 	end if
 
@@ -322,8 +328,6 @@ downloadFiles = function(machine, _params)
 	if keyword == "" then keyword = "ALL"
 	count = 0;
 
-	print("Connected to <b>" + machine.ip + "</b>")
-
 	files = searchFiles(machine.shell, remotePath, keyword)
 	start = false
 
@@ -333,7 +337,7 @@ downloadFiles = function(machine, _params)
 			for file in files
 				print(file.path)
 			end for
-			start = user_input(files.len + " files found, hit enter to download, any key to skip:") == ""
+			start = user_input(color.apply(color.INFO, files.len + " files found, hit enter to download, any key to skip:")) == ""
 		end if
 	else
 		print("No files found matching <b>" + keyword + "</b>")
@@ -349,7 +353,7 @@ downloadFiles = function(machine, _params)
 		if typeof(success) == "string" or success == 0 then
 			color.print(color.ERROR, "Error: " + success)
 		else
-			print("Downloaded " + file.path.split("/")[-1] + " to " + hostPath + hostFolder)
+			print("Downloaded <b>" + file.path + "</b> to <b>" + hostPath + hostFolder + "</b>")
 			count = count + 1
 		end if
 	end for
@@ -363,13 +367,13 @@ deleteFile = function(machine, _params)
 	
 	delFile = machine.shell.host_computer.File(remotePath)
 	if not delFile then
-		color.print(color.ERROR, "Error: File " + remotePath + " not found on " + machine.ip)
+		color.print(color.ERROR, "Error: File <b>" + remotePath + "</b> not found")
 		return count
 	end if
 
 	delError = delFile.delete
 	if delError == "" then
-		print("Deleted " + remotePath.split("/")[-1] + " from " + machine.ip)
+		print("Deleted <b>" + remotePath + "</b>")
 		count = 1
 	else
 		color.print(color.ERROR, "Error: " + delError)
@@ -380,11 +384,12 @@ end function
 
 runFile = function(machine, _params)
 	remotePath = _params.remotePath
+	if remotePath.split("/").len == 1 then remotePath = "/bin/" + remotePath
 	args = _params.args
 	count = 0
 
 	if typeof(machine.shell.launch(remotePath, args)) == "null" then
-		print("Successfully ran <b>" + remotePath + " " + args + "</b>")
+		print("Ran <b>" + remotePath + " " + args + "</b>")
 		count = 1
 	else
 		color.print(color.ERROR, "Error: <b>" + remotePath + " " + args + "</b> not successful")
@@ -400,7 +405,7 @@ FILE_ACTIONS.push({ "type": "DOWNLOAD", "desc": "Download files", "func": @downl
 FILE_ACTIONS.push({ "type": "DELETE", "desc": "Delete file", "func": @deleteFile, "params": { "remotePath": "Absolute file path on remote machine" }})
 
 RUN_ACTIONS = []
-RUN_ACTIONS.push({ "type": "BINARY", "desc": "Run binary file", "func": @runFile, "params": { "remotePath": "Absolute file path on remote machine", "args": "Run arguments, Enter for none" }})
+RUN_ACTIONS.push({ "type": "BINARY", "desc": "Run binary file", "func": @runFile, "params": { "remotePath": "/bin file name or absolute file path on remote machine", "args": "Run arguments, Enter for none" }})
 
 CATEGORIES = []
 CATEGORIES.push({ "type": "FILE", "desc": "Edit files", "actions": FILE_ACTIONS })
