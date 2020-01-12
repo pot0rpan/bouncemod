@@ -425,7 +425,7 @@ while creds.len
 	actions = buildActionList(CATEGORIES)
 
 	print("\n" + actions.len + " actions selected to run on " + selectedMachines.len + " machines")
-	if not actions.len then break
+	if not actions.len then continue
 
 	printActions(actions)
 	if not user_input("\n" + color.apply(color.INFO, "Hit enter to connect and run actions, any key to abort:")) == "" then
