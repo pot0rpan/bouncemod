@@ -1,16 +1,14 @@
-// Upload/Delete files on one or all of your Map.conf machines
 PROGRAM_NAME = "bouncemod"
-PROGRAM_VERSION = "1.0.0"
+PROGRAM_VERSION = "1.0.1"
 
 color = { "PRIMARY": "#4488FF", "ERROR": "#FF4488", "SUCCESS": "#44FF88", "INFO": "#FFDD44" }
 color.apply = function(hex, text)
 	if not hex[0] == "#" then hex = "#" + hex
-	if not hex.len == 7 then return text
+	if not hex.len == 7 and not hex.len == 9 then return text
 	return "<color=" + hex + ">" + text + "</color>"
 end function
 color.print = function(hex, text)
-	lines = text.split("\n")
-	for line in lines
+	for line in text.split("\n")
 		print(color.apply(hex, line))
 	end for
 end function
@@ -23,7 +21,7 @@ printHeader = function()
 end function
 
 exitUsage = function()
-	print("<b>Usage: bouncemod [[user@password] [ip][, ...]]</b>")
+	print("<b>Usage: bouncemod [[user@password] [ip] [...]]</b>")
 	exit("<i>* No parameters uses current user's Map.conf</i>")
 end function
 
@@ -281,10 +279,8 @@ doActions = function(machines, actions)
 
 	for machine in machines
 		remote = getShell(machine.ip, machine.user, machine.pass)
-		if not remote then 
-			color.print(color.ERROR, "Error: Could not connect to " + machine.ip)
-			continue
-		end if
+		if not remote then continue
+
 		print("\n" + color.apply(color.INFO, "Connected to " + machine.ip))
 		machine.shell = remote
 
